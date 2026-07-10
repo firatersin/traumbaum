@@ -608,7 +608,7 @@ h1{
   <div id="quizArea"></div>
   <div id="statsArea"></div>
   <div id="printArea"></div>
-  <div class="source-note">Fotos primär von GBIF.org (Herbarien, Naturkundemuseen, iNaturalist-Beobachtungen) · Fallback: Wikipedia</div>
+  <div class="source-note">Fotos: GBIF.org (Herbarien, Museen) → iNaturalist (Sichtungen, research grade) → Wikipedia (Fallback) · Sommer-Aufnahmen bevorzugt, Rinde/Winter ausgefiltert</div>
 </div>
 
 <script>
@@ -718,13 +718,13 @@ async function saveStats(){
 }
 async function loadImgCache(){
   try{
-    const res = await storageAPI.get('tree-imgcache-v3');
+    const res = await storageAPI.get('tree-imgcache-v4');
     imgCache = res ? JSON.parse(res.value) : {};
   }catch(e){ imgCache = {}; }
 }
 async function saveImgCacheEntry(name, images){
   imgCache[name] = images;
-  try{ await storageAPI.set('tree-imgcache-v3', JSON.stringify(imgCache)); }catch(e){}
+  try{ await storageAPI.set('tree-imgcache-v4', JSON.stringify(imgCache)); }catch(e){}
 }
 
 let dailyLog = {};      // "YYYY-MM-DD" -> {correct, total}
@@ -923,12 +923,74 @@ async function wikiFallbackImages(name){
   return [];
 }
 
+/* ---------------- iNaturalist (second reliable source) ----------------
+   Community-vetted "research grade" observations — multiple people agreed
+   on the ID. Tends to have far more whole-plant/foliage-in-habitat photos
+   than GBIF's aggregated specimen records, so it's a strong second layer
+   before falling back to Wikipedia's single lead image. */
+async function inatMatchTaxonId(name){
+  const url = `https://api.inaturalist.org/v1/taxa?q=${encodeURIComponent(name)}&rank=species&per_page=5&is_active=true`;
+  try{
+    const r = await fetch(url);
+    if(!r.ok) return null;
+    const j = await r.json();
+    const results = j.results || [];
+    const lower = name.toLowerCase();
+    const exact = results.find(t => (t.name||'').toLowerCase() === lower);
+    if(exact) return exact.id;
+    return results.length ? results[0].id : null;
+  }catch(e){ return null; }
+}
+
+async function inatObservationImages(taxonId, season){
+  let url = `https://api.inaturalist.org/v1/observations?taxon_id=${taxonId}&quality_grade=research&photos=true&per_page=30&order_by=votes`
+    + `&photo_license=cc0,cc-by,cc-by-sa,cc-by-nc,cc-by-nc-sa,cc-by-nd,cc-by-nc-nd`;
+  if(season){
+    [4,5,6,7,8,9].forEach(m => { url += `&month=${m}`; });
+  }
+  try{
+    const r = await fetch(url);
+    if(!r.ok) return [];
+    const j = await r.json();
+    const out = [];
+    const seen = new Set();
+    for(const obs of (j.results||[])){
+      for(const p of (obs.photos||[])){
+        if(!p.url) continue;
+        const bigUrl = p.url.replace('square','medium');
+        if(seen.has(bigUrl)) continue;
+        seen.add(bigUrl);
+        out.push({
+          url: bigUrl,
+          credit: (p.attribution || (obs.user && obs.user.login) || 'iNaturalist').replace(/^\(c\)\s*/,''),
+          license: (p.license_code || '').toUpperCase(),
+          source: 'iNaturalist',
+          link: `https://www.inaturalist.org/observations/${obs.id}`
+        });
+        if(out.length >= 6) return out;
+      }
+    }
+    return out;
+  }catch(e){ return []; }
+}
+
+async function inatFallbackImages(name){
+  const taxonId = await inatMatchTaxonId(name);
+  if(!taxonId) return [];
+  let images = await inatObservationImages(taxonId, true);   // growing season first
+  if(images.length === 0) images = await inatObservationImages(taxonId, false); // relax if too few
+  return images;
+}
+
 async function getImages(name){
   if(imgCache[name]) return imgCache[name];
   let images = [];
   const taxonKey = await gbifMatchTaxonKey(name);
   if(taxonKey){
     images = await gbifOccurrenceImages(taxonKey);
+  }
+  if(images.length === 0){
+    images = await inatFallbackImages(name);
   }
   if(images.length === 0){
     images = await wikiFallbackImages(name);
