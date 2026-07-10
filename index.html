@@ -718,13 +718,13 @@ async function saveStats(){
 }
 async function loadImgCache(){
   try{
-    const res = await storageAPI.get('tree-imgcache-v4');
+    const res = await storageAPI.get('tree-imgcache-v5');
     imgCache = res ? JSON.parse(res.value) : {};
   }catch(e){ imgCache = {}; }
 }
 async function saveImgCacheEntry(name, images){
   imgCache[name] = images;
-  try{ await storageAPI.set('tree-imgcache-v4', JSON.stringify(imgCache)); }catch(e){}
+  try{ await storageAPI.set('tree-imgcache-v5', JSON.stringify(imgCache)); }catch(e){}
 }
 
 let dailyLog = {};      // "YYYY-MM-DD" -> {correct, total}
@@ -819,16 +819,21 @@ async function gbifMatchTaxonKey(name){
 }
 
 // Keyword filter: skip photos whose title/description flags them as
-// bark/trunk close-ups or bare winter shots — she wants leafed-out, "green" trees.
-const EXCLUDE_PHOTO_RE = /\b(bark|trunk|stem|bole|rinde|borke|stamm|winter|snow|schnee|dormant|leafless|kahl|bare|frost|dead\s?wood)\b/i;
+// bark/trunk close-ups, bare winter shots, or snow — she wants leafed-out, "green" trees.
+const EXCLUDE_PHOTO_RE = /\b(bark|trunk|stem|bole|rinde|borke|stamm|winter|snow\w*|schnee\w*|verschneit\w*|snowy|snow-covered|ice|iced|icy|eis\b|vereist\w*|glacier|frost\w*|rime|dormant|leafless|kahl|bare|dead\s?wood)\b/i;
 
-async function gbifFetchImages(taxonKey, {season, humanOnly}){
+const SEASON_MONTHS = {
+  core: [6,7,8],       // peak summer — lowest snow risk, even at altitude
+  wide: [4,5,6,7,8,9]  // full growing season, used if 'core' comes up too thin
+};
+
+async function gbifFetchImages(taxonKey, {season, humanOnly, lowElevation}){
   let url = `https://api.gbif.org/v1/occurrence/search?taxonKey=${taxonKey}&mediaType=StillImage&limit=60`;
   if(humanOnly) url += `&basisOfRecord=HUMAN_OBSERVATION`;
-  if(season){
-    // April–September: the growing season for temperate-zone trees, i.e. leafed out.
-    [4,5,6,7,8,9].forEach(m => { url += `&month=${m}`; });
+  if(season && SEASON_MONTHS[season]){
+    SEASON_MONTHS[season].forEach(m => { url += `&month=${m}`; });
   }
+  if(lowElevation) url += `&elevation=0,1400`; // avoid alpine/treeline snow patches
   try{
     const r = await fetch(url);
     if(!r.ok) return [];
@@ -860,9 +865,10 @@ async function gbifOccurrenceImages(taxonKey){
   // Try progressively looser tiers so rare species still return *something*,
   // while common ones get the cleanest, most representative photos.
   const tiers = [
-    {season:true,  humanOnly:true},   // best: real-life summer/leaf-on photos
-    {season:false, humanOnly:true},   // relax season if too few
-    {season:false, humanOnly:false}   // last resort: any record type
+    {season:'core', humanOnly:true,  lowElevation:true},   // best: peak-summer, low-altitude, real photos
+    {season:'core', humanOnly:true,  lowElevation:false},  // allow higher altitude if too few
+    {season:'wide', humanOnly:true,  lowElevation:false},  // widen the season window
+    {season:null,   humanOnly:false, lowElevation:false}   // last resort: any record
   ];
   for(const tier of tiers){
     const images = await gbifFetchImages(taxonKey, tier);
@@ -945,8 +951,8 @@ async function inatMatchTaxonId(name){
 async function inatObservationImages(taxonId, season){
   let url = `https://api.inaturalist.org/v1/observations?taxon_id=${taxonId}&quality_grade=research&photos=true&per_page=30&order_by=votes`
     + `&photo_license=cc0,cc-by,cc-by-sa,cc-by-nc,cc-by-nc-sa,cc-by-nd,cc-by-nc-nd`;
-  if(season){
-    [4,5,6,7,8,9].forEach(m => { url += `&month=${m}`; });
+  if(season && SEASON_MONTHS[season]){
+    SEASON_MONTHS[season].forEach(m => { url += `&month=${m}`; });
   }
   try{
     const r = await fetch(url);
@@ -977,8 +983,9 @@ async function inatObservationImages(taxonId, season){
 async function inatFallbackImages(name){
   const taxonId = await inatMatchTaxonId(name);
   if(!taxonId) return [];
-  let images = await inatObservationImages(taxonId, true);   // growing season first
-  if(images.length === 0) images = await inatObservationImages(taxonId, false); // relax if too few
+  let images = await inatObservationImages(taxonId, 'core');   // peak summer first
+  if(images.length === 0) images = await inatObservationImages(taxonId, 'wide');  // widen if too few
+  if(images.length === 0) images = await inatObservationImages(taxonId, null);   // last resort
   return images;
 }
 
