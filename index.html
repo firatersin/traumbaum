@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -717,13 +718,13 @@ async function saveStats(){
 }
 async function loadImgCache(){
   try{
-    const res = await storageAPI.get('tree-imgcache-v2');
+    const res = await storageAPI.get('tree-imgcache-v3');
     imgCache = res ? JSON.parse(res.value) : {};
   }catch(e){ imgCache = {}; }
 }
 async function saveImgCacheEntry(name, images){
   imgCache[name] = images;
-  try{ await storageAPI.set('tree-imgcache-v2', JSON.stringify(imgCache)); }catch(e){}
+  try{ await storageAPI.set('tree-imgcache-v3', JSON.stringify(imgCache)); }catch(e){}
 }
 
 let dailyLog = {};      // "YYYY-MM-DD" -> {correct, total}
@@ -817,8 +818,17 @@ async function gbifMatchTaxonKey(name){
   return null;
 }
 
-async function gbifOccurrenceImages(taxonKey){
-  const url = `https://api.gbif.org/v1/occurrence/search?taxonKey=${taxonKey}&mediaType=StillImage&limit=40`;
+// Keyword filter: skip photos whose title/description flags them as
+// bark/trunk close-ups or bare winter shots — she wants leafed-out, "green" trees.
+const EXCLUDE_PHOTO_RE = /\b(bark|trunk|stem|bole|rinde|borke|stamm|winter|snow|schnee|dormant|leafless|kahl|bare|frost|dead\s?wood)\b/i;
+
+async function gbifFetchImages(taxonKey, {season, humanOnly}){
+  let url = `https://api.gbif.org/v1/occurrence/search?taxonKey=${taxonKey}&mediaType=StillImage&limit=60`;
+  if(humanOnly) url += `&basisOfRecord=HUMAN_OBSERVATION`;
+  if(season){
+    // April–September: the growing season for temperate-zone trees, i.e. leafed out.
+    [4,5,6,7,8,9].forEach(m => { url += `&month=${m}`; });
+  }
   try{
     const r = await fetch(url);
     if(!r.ok) return [];
@@ -829,6 +839,8 @@ async function gbifOccurrenceImages(taxonKey){
       for(const m of (rec.media||[])){
         if(m.type !== 'StillImage' || !m.identifier) continue;
         if(seen.has(m.identifier)) continue;
+        const meta = `${m.title||''} ${m.description||''}`;
+        if(EXCLUDE_PHOTO_RE.test(meta)) continue;
         seen.add(m.identifier);
         out.push({
           url: m.identifier,
@@ -842,6 +854,21 @@ async function gbifOccurrenceImages(taxonKey){
     }
     return out;
   }catch(e){ return []; }
+}
+
+async function gbifOccurrenceImages(taxonKey){
+  // Try progressively looser tiers so rare species still return *something*,
+  // while common ones get the cleanest, most representative photos.
+  const tiers = [
+    {season:true,  humanOnly:true},   // best: real-life summer/leaf-on photos
+    {season:false, humanOnly:true},   // relax season if too few
+    {season:false, humanOnly:false}   // last resort: any record type
+  ];
+  for(const tier of tiers){
+    const images = await gbifFetchImages(taxonKey, tier);
+    if(images.length) return images;
+  }
+  return [];
 }
 
 function wikiCandidateTitles(name){
