@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baumlehrpfad — Bestimmungstrainer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500;1,9..144,600&family=Work+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap');
+
+:root{
+  --paper:#F1ECDE;
+  --paper-dim:#E7E0CD;
+  --forest:#25322A;
+  --moss:#52694F;
+  --bark:#5A4632;
+  --ochre:#A6752C;
+  --sage:#6E8A63;
+  --rust:#A2472F;
+  --line:#c9c0a6;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(37,50,42,0.06) 1px, transparent 0);
+  background-size: 22px 22px;
+  color:var(--forest);
+  font-family:'Work Sans', sans-serif;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:24px 16px 60px;
+}
+
+.wrap{width:100%;max-width:640px;}
+
+/* ---- Header ---- */
+header{
+  text-align:center;
+  margin-bottom:22px;
+  position:relative;
+}
+.eyebrow{
+  font-family:'Space Mono', monospace;
+  font-size:11px;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:var(--bark);
+  border:1px solid var(--bark);
+  display:inline-block;
+  padding:3px 10px;
+  border-radius:20px;
+  margin-bottom:10px;
+}
+h1{
+  font-family:'Fraunces', serif;
+  font-style:italic;
+  font-weight:600;
+  font-size:2.1rem;
+  margin:0 0 4px;
+  color:var(--forest);
+}
+.sub{
+  font-size:0.92rem;
+  color:var(--bark);
+  opacity:0.85;
+}
+
+/* ---- Nav tabs ---- */
+.tabs{
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  margin-bottom:18px;
+  flex-wrap:wrap;
+}
+.tab{
+  font-family:'Space Mono', monospace;
+  font-size:12px;
+  letter-spacing:0.03em;
+  padding:8px 14px;
+  border-radius:6px;
+  border:1px solid var(--line);
+  background:var(--paper-dim);
+  color:var(--bark);
+  cursor:pointer;
+  transition:all .15s ease;
+}
+.tab.active{
+  background:var(--forest);
+  border-color:var(--forest);
+  color:var(--paper);
+}
+.tab:hover:not(.active){border-color:var(--moss);}
+
+/* ---- Filter row ---- */
+.filters{
+  display:flex;
+  justify-content:center;
+  gap:6px;
+  margin-bottom:20px;
+  font-family:'Space Mono', monospace;
+  font-size:11px;
+}
+.chip{
+  padding:5px 11px;
+  border-radius:20px;
+  border:1px solid var(--line);
+  cursor:pointer;
+  color:var(--bark);
+  background:transparent;
+}
+.chip.on{background:var(--sage);border-color:var(--sage);color:var(--paper);}
+
+/* ---- Specimen card (signature element) ---- */
+.card{
+  background:#fbf9f2;
+  border:1px solid var(--line);
+  border-radius:2px;
+  padding:0;
+  position:relative;
+  box-shadow: 4px 4px 0 rgba(37,50,42,0.08);
+}
+.card::before{
+  content:"";
+  position:absolute;
+  top:10px;left:10px;right:10px;bottom:10px;
+  border:1px dashed var(--line);
+  pointer-events:none;
+}
+.card-inner{padding:26px;}
+.specimen-tag{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-family:'Space Mono', monospace;
+  font-size:11px;
+  color:var(--bark);
+  margin-bottom:14px;
+  letter-spacing:0.05em;
+}
+.specimen-tag .seal{
+  width:34px;height:34px;
+  border-radius:50%;
+  border:1.5px solid var(--ochre);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Fraunces', serif;
+  font-style:italic;
+  color:var(--ochre);
+  font-size:15px;
+}
+
+.img-frame{
+  width:100%;
+  aspect-ratio:4/3;
+  background:var(--paper-dim);
+  border:1px solid var(--line);
+  border-radius:2px;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:8px;
+  position:relative;
+}
+.img-frame img{
+  width:100%;height:100%;object-fit:cover;
+  animation:fadeIn .4s ease;
+}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.img-frame .loading, .img-frame .noimg{
+  font-family:'Space Mono', monospace;
+  font-size:12px;
+  color:var(--bark);
+  text-align:center;
+  padding:20px;
+}
+.gal-arrow{
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  width:30px;height:30px;
+  border-radius:50%;
+  border:1px solid var(--line);
+  background:rgba(251,249,242,0.85);
+  color:var(--forest);
+  font-family:'Space Mono', monospace;
+  font-size:14px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  user-select:none;
+}
+.gal-arrow.prev{left:8px;}
+.gal-arrow.next{right:8px;}
+.gal-arrow:hover{background:var(--paper);}
+.gal-dots{
+  position:absolute;
+  bottom:8px;left:0;right:0;
+  display:flex;justify-content:center;gap:5px;
+}
+.gal-dots span{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(37,50,42,0.3);
+}
+.gal-dots span.on{background:var(--ochre);}
+.img-credit{
+  font-size:10px;
+  font-family:'Space Mono', monospace;
+  color:var(--bark);
+  opacity:0.7;
+  text-align:right;
+  margin:0 0 14px;
+  line-height:1.5;
+}
+.img-credit a{color:var(--bark);}
+/* ---- Genus focus dropdown ---- */
+.genus-row{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:8px;
+  margin:-8px 0 20px;
+  font-family:'Space Mono', monospace;
+  font-size:11px;
+  color:var(--bark);
+}
+.genus-row select{
+  font-family:'Space Mono', monospace;
+  font-size:11px;
+  color:var(--forest);
+  background:var(--paper-dim);
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:5px 10px;
+  cursor:pointer;
+}
+
+/* ---- Timed challenge ---- */
+.challenge-intro{text-align:center;padding:10px 0;}
+.challenge-intro p{color:var(--bark);font-size:0.92rem;line-height:1.6;max-width:420px;margin:0 auto 18px;}
+.timer-bar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-family:'Space Mono', monospace;
+  font-size:12px;
+  color:var(--bark);
+  margin-bottom:12px;
+  padding-bottom:8px;
+  border-bottom:1px solid var(--line);
+}
+.timer-bar .clock{font-size:1.1rem;color:var(--rust);font-weight:bold;}
+.timer-bar .clock.low{animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.challenge-result{text-align:center;padding:20px 0;}
+.challenge-result .big{
+  font-family:'Fraunces', serif;
+  font-style:italic;
+  font-weight:600;
+  font-size:2.4rem;
+  color:var(--forest);
+}
+.challenge-result p{color:var(--bark);font-size:0.9rem;margin-top:6px;}
+
+/* ---- Printable cheat sheet ---- */
+#printArea{display:none;}
+.print-toolbar{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin-bottom:18px;
+}
+.print-grid{
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:14px;
+}
+.print-card{
+  border:1px solid var(--line);
+  border-radius:4px;
+  overflow:hidden;
+  background:#fbf9f2;
+  break-inside:avoid;
+}
+.print-card .print-img{
+  width:100%;
+  aspect-ratio:4/3;
+  background:var(--paper-dim);
+  overflow:hidden;
+}
+.print-card .print-img img{width:100%;height:100%;object-fit:cover;}
+.print-card .print-name{
+  font-family:'Fraunces', serif;
+  font-style:italic;
+  font-size:0.82rem;
+  text-align:center;
+  padding:6px 4px;
+  color:var(--forest);
+}
+@media print{
+  body *{visibility:hidden;}
+  #printArea, #printArea *{visibility:visible;}
+  #printArea{display:block !important;position:absolute;top:0;left:0;width:100%;}
+  .print-toolbar{display:none;}
+  .print-grid{grid-template-columns:repeat(3, 1fr);}
+}
+
+/* ---- Picture-mode grid (name -> choose photo) ---- */
+.pic-prompt{
+  font-family:'Fraunces', serif;
+  font-style:italic;
+  font-weight:600;
+  font-size:1.25rem;
+  text-align:center;
+  margin-bottom:16px;
+  color:var(--forest);
+}
+.pic-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.pic-opt{
+  aspect-ratio:4/3;
+  border:2px solid var(--line);
+  border-radius:4px;
+  overflow:hidden;
+  cursor:pointer;
+  padding:0;
+  background:var(--paper-dim);
+  position:relative;
+}
+.pic-opt img{width:100%;height:100%;object-fit:cover;display:block;}
+.pic-opt .loading, .pic-opt .noimg{
+  font-family:'Space Mono', monospace;
+  font-size:10px;
+  color:var(--bark);
+  text-align:center;
+  padding:6px;
+}
+.pic-opt.correct{border-color:var(--sage);box-shadow:0 0 0 2px var(--sage) inset;}
+.pic-opt.wrong{border-color:var(--rust);box-shadow:0 0 0 2px var(--rust) inset;}
+.pic-opt:disabled{cursor:default;}
+
+.source-note{
+  font-size:10px;
+  font-family:'Space Mono', monospace;
+  color:var(--bark);
+  opacity:0.55;
+  text-align:center;
+  margin-top:26px;
+}
+
+/* ---- Comparison panel (shown after a wrong answer) ---- */
+.compare{
+  margin-top:16px;
+  padding-top:16px;
+  border-top:1px dashed var(--line);
+  animation:fadeIn .3s ease;
+}
+.compare-title{
+  font-family:'Space Mono', monospace;
+  font-size:11px;
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+  color:var(--rust);
+  margin-bottom:10px;
+}
+.compare-imgs{
+  display:flex;
+  gap:10px;
+  margin-bottom:12px;
+}
+.compare-col{flex:1;min-width:0;}
+.compare-frame{
+  position:relative;
+  width:100%;
+  aspect-ratio:4/3;
+  background:var(--paper-dim);
+  border:1px solid var(--line);
+  border-radius:2px;
+  overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+.compare-frame img{width:100%;height:100%;object-fit:cover;}
+.compare-frame .loading, .compare-frame .noimg{
+  font-family:'Space Mono', monospace;
+  font-size:10px;
+  color:var(--bark);
+  text-align:center;
+  padding:8px;
+}
+.compare-label{
+  font-family:'Fraunces', serif;
+  font-style:italic;
+  font-size:0.85rem;
+  text-align:center;
+  margin-top:6px;
+  padding:3px 6px;
+  border-radius:3px;
+}
+.compare-label span{
+  display:block;
+  font-family:'Space Mono', monospace;
+  font-style:normal;
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  opacity:0.8;
+}
+.compare-label.wrong{background:rgba(162,71,47,0.12);color:var(--rust);}
+.compare-label.correct{background:rgba(110,138,99,0.15);color:var(--moss);}
+.compare-text{
+  font-size:0.9rem;
+  line-height:1.55;
+  color:var(--forest);
+  background:var(--paper-dim);
+  border-radius:4px;
+  padding:12px 14px;
+}
+
+/* ---- Multiple choice ---- */
+.options{display:flex;flex-direction:column;gap:9px;}
+.opt{
+  text-align:left;
+  font-family:'Fraunces', serif;
+  font-style:italic;
+  font-size:1.02rem;
+  padding:13px 16px;
+  border:1px solid var(--line);
+  background:var(--paper);
+  border-radius:4px;
+  cursor:pointer;
+  transition:all .12s ease;
+  color:var(--forest);
+}
+.opt:hover{border-color:var(--moss);}
+.opt.correct{background:var(--sage);border-color:var(--sage);color:#fff;}
+.opt.wrong{background:var(--rust);border-color:var(--rust);color:#fff;}
+.opt.reveal-correct{border-color:var(--sage);box-shadow:inset 0 0 0 2px var(--sage);}
+.opt:disabled{cursor:default;}
+
+/* ---- Flashcard mode ---- */
+.flash-name{
+  font-family:'Fraunces', serif;
+  font-style:italic;
+  font-weight:600;
+  font-size:1.3rem;
+  text-align:center;
+  padding:20px;
+  border:1px dashed var(--line);
+  border-radius:4px;
+  cursor:pointer;
+  color:var(--bark);
+  background:var(--paper);
+}
+.flash-name.shown{color:var(--forest);border-style:solid;}
+.hint-btn{
+  display:block;margin:12px auto 0;
+  font-family:'Space Mono', monospace;
+  font-size:11px;
+  background:none;border:none;color:var(--bark);
+  text-decoration:underline;cursor:pointer;
+}
+
+/* ---- Controls ---- */
+.controls{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:16px;
+  font-family:'Space Mono', monospace;
+  font-size:12px;
+  color:var(--bark);
+}
+.btn{
+  font-family:'Space Mono', monospace;
+  font-size:12px;
+  padding:9px 16px;
+  border-radius:6px;
+  border:1px solid var(--forest);
+  background:var(--forest);
+  color:var(--paper);
+  cursor:pointer;
+}
+.btn.ghost{background:transparent;color:var(--forest);}
+.btn:disabled{opacity:0.4;cursor:default;}
+
+.progress-line{
+  font-family:'Space Mono', monospace;
+  font-size:11px;
+  color:var(--bark);
+  text-align:center;
+  margin-top:8px;
+}
+
+/* ---- Stats view ---- */
+.stat-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:9px 4px;
+  border-bottom:1px solid var(--line);
+  font-size:0.9rem;
+}
+.stat-row .lat{font-family:'Fraunces', serif;font-style:italic;}
+.stat-row .ratio{
+  font-family:'Space Mono', monospace;
+  font-size:10px;
+  color:var(--bark);
+  opacity:0.75;
+  margin-left:8px;
+}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-left:6px;}
+.dot.new{background:var(--line);}
+.dot.weak{background:var(--rust);}
+.dot.ok{background:#d9b96b;}
+.dot.strong{background:var(--sage);}
+.section-title{
+  font-family:'Space Mono', monospace;
+  font-size:11px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--bark);
+  margin:22px 0 6px;
+}
+.summary-bar{
+  display:flex;gap:10px;justify-content:center;margin-bottom:16px;
+  font-family:'Space Mono', monospace;font-size:11px;color:var(--bark);
+}
+.history-row{
+  display:flex;align-items:center;gap:10px;
+  padding:5px 0;
+  font-family:'Space Mono', monospace;
+  font-size:11px;
+  color:var(--bark);
+}
+.history-row .hdate{width:74px;flex-shrink:0;}
+.history-bar-track{flex:1;height:8px;background:var(--paper-dim);border-radius:4px;overflow:hidden;}
+.history-bar-fill{height:100%;background:var(--sage);}
+.history-row .hpct{width:76px;text-align:right;flex-shrink:0;}
+.confusion-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:7px 4px;
+  border-bottom:1px solid var(--line);
+  font-size:0.86rem;
+}
+.confusion-row .pair{font-family:'Fraunces', serif;font-style:italic;}
+.confusion-row .pair .arrow{
+  font-family:'Space Mono', monospace;
+  font-style:normal;
+  opacity:0.5;
+  margin:0 4px;
+}
+.confusion-row .count{
+  font-family:'Space Mono', monospace;
+  font-size:11px;
+  color:var(--rust);
+  flex-shrink:0;
+  margin-left:10px;
+}
+.empty-note{
+  font-family:'Space Mono', monospace;
+  font-size:11px;
+  color:var(--bark);
+  opacity:0.6;
+  text-align:center;
+  padding:10px 0;
+}
+.reset-link{
+  display:block;text-align:center;margin-top:24px;
+  font-family:'Space Mono', monospace;font-size:11px;
+  color:var(--rust);opacity:0.7;cursor:pointer;text-decoration:underline;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Baumlehrpfad · Specimen Trainer</div>
+    <h1>Bäume erkennen</h1>
+    <div class="sub">Laub- und Nadelgehölze am Bild bestimmen</div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab" data-mode="mc">Multiple Choice</div>
+    <div class="tab" data-mode="pic">Bild-Modus</div>
+    <div class="tab" data-mode="flash">Karteikarten</div>
+    <div class="tab" data-mode="challenge">Zeit-Challenge</div>
+    <div class="tab" data-mode="print">Spickzettel</div>
+    <div class="tab" data-mode="stats">Fortschritt</div>
+  </div>
+
+  <div class="filters" id="filterRow">
+    <div class="chip on" data-cat="all">Alle</div>
+    <div class="chip" data-cat="laub">Laubgehölze</div>
+    <div class="chip" data-cat="nadel">Nadelgehölze</div>
+    <div class="chip" data-cat="weak">Nur Schwache</div>
+  </div>
+  <div class="genus-row" id="genusRow">
+    <label for="genusSelect">Gattung üben:</label>
+    <select id="genusSelect"><option value="all">Alle Gattungen</option></select>
+  </div>
+
+  <div id="quizArea"></div>
+  <div id="statsArea"></div>
+  <div id="printArea"></div>
+  <div class="source-note">Fotos primär von GBIF.org (Herbarien, Naturkundemuseen, iNaturalist-Beobachtungen) · Fallback: Wikipedia</div>
+</div>
+
+<script>
+/* ---------------------------------------------------------------
+   Storage layer: window.storage only exists inside the Claude.ai
+   artifact preview. Once this file is hosted on its own (Netlify,
+   GitHub Pages, etc.) that API is gone, so we fall back to the
+   browser's localStorage — same get/set shape, so nothing else in
+   this file needs to change.
+------------------------------------------------------------------*/
+const storageAPI = (typeof window !== 'undefined' && window.storage) ? window.storage : {
+  async get(key){
+    const v = localStorage.getItem(key);
+    if(v === null) throw new Error('no such key');
+    return {key, value: v};
+  },
+  async set(key, value){
+    localStorage.setItem(key, value);
+    return {key, value};
+  },
+  async delete(key){
+    localStorage.removeItem(key);
+    return {key, deleted:true};
+  }
+};
+
+/* ---------------- Species data ---------------- */
+const SPECIES = [
+["Acer campestre","laub"],["Acer negundo","laub"],["Acer platanoides","laub"],
+["Acer pseudoplatanus","laub"],["Acer saccharinum","laub"],["Acer saccharum","laub"],
+["Aesculus hippocastanum","laub"],["Aesculus x carnea","laub"],
+["Alnus glutinosa","laub"],["Alnus incana","laub"],["Alnus viridis","laub"],
+["Bruckenthalia spiculifolia","laub"],["Berberis vulgaris","laub"],
+["Betula nana","laub"],["Betula pendula","laub"],["Betula pubescens","laub"],
+["Buxus sempervirens","laub"],["Carpinus betulus","laub"],["Carya ovata","laub"],
+["Castanea sativa","laub"],["Cercidiphyllum japonicum","laub"],
+["Cornus mas","laub"],["Cornus sanguinea","laub"],["Corylus avellana","laub"],
+["Corylus colurna","laub"],["Crataegus monogyna","laub"],["Euonymus europaeus","laub"],
+["Fagus sylvatica","laub"],["Fraxinus excelsior","laub"],["Hippophae rhamnoides","laub"],
+["Ilex aquifolium","laub"],["Juglans regia","laub"],["Laburnum anagyroides","laub"],
+["Ligustrum vulgare","laub"],["Liquidambar styraciflua","laub"],
+["Liriodendron tulipifera","laub"],["Lonicera xylosteum","laub"],
+["Mahonia aquifolium","laub"],["Malus sylvestris","laub"],
+["Platanus x acerifolia","laub"],["Populus nigra","laub"],["Populus tremula","laub"],
+["Populus trichocarpa","laub"],["Prunus avium","laub"],["Prunus padus","laub"],
+["Prunus serotina","laub"],["Pyrus pyraster","laub"],["Quercus cerris","laub"],
+["Quercus petraea","laub"],["Quercus robur","laub"],["Quercus rubra","laub"],
+["Rhamnus catharticus","laub"],["Rhamnus frangula","laub"],["Robinia pseudoacacia","laub"],
+["Salix alba","laub"],["Salix caprea","laub"],["Salix repens","laub"],
+["Sambucus nigra","laub"],["Sambucus racemosa","laub"],["Sorbus aria","laub"],
+["Sorbus aucuparia","laub"],["Sorbus domestica","laub"],["Sorbus torminalis","laub"],
+["Tilia cordata","laub"],["Tilia platyphyllos","laub"],["Ulmus glabra","laub"],
+["Ulmus laevis","laub"],["Ulmus minor","laub"],["Viburnum lantana","laub"],
+["Viburnum opulus","laub"],
+["Abies alba","nadel"],["Abies balsamea","nadel"],["Abies concolor","nadel"],
+["Abies grandis","nadel"],["Abies homolepis","nadel"],["Abies koreana","nadel"],
+["Abies nordmanniana","nadel"],["Abies pinsapo","nadel"],["Abies procera","nadel"],
+["Abies sibirica","nadel"],["Araucaria araucana","nadel"],["Calocedrus decurrens","nadel"],
+["Chamaecyparis lawsoniana","nadel"],["Chamaecyparis obtusa","nadel"],
+["Cryptomeria japonica","nadel"],["Juniperus communis","nadel"],
+["Larix decidua","nadel"],["Larix kaempferi","nadel"],
+["Metasequoia glyptostroboides","nadel"],["Picea abies","nadel"],
+["Picea asperata","nadel"],["Picea glauca","nadel"],["Picea mariana","nadel"],
+["Picea omorika","nadel"],["Picea orientalis","nadel"],["Picea pungens","nadel"],
+["Picea sitchensis","nadel"],["Pinus cembra","nadel"],["Pinus parviflora","nadel"],
+["Pinus strobus","nadel"],["Pinus peuce","nadel"],["Pinus ponderosa","nadel"],
+["Pinus jeffreyi","nadel"],["Pinus sylvestris","nadel"],["Pinus mugo","nadel"],
+["Pinus contorta","nadel"],["Pinus nigra","nadel"],["Pseudotsuga menziesii","nadel"],
+["Sequoiadendron giganteum","nadel"],["Sequoia sempervirens","nadel"],
+["Taxus baccata","nadel"],["Platycladus orientalis","nadel"],
+["Thuja plicata","nadel"],["Thujopsis dolabrata","nadel"],
+["Tsuga canadensis","nadel"],["Tsuga sieboldii","nadel"],["Tsuga diversifolia","nadel"]
+];
+
+/* ---------------- State ---------------- */
+let mode = "mc";
+let catFilter = "all";
+let genusFilter = "all";
+let statsCache = {}; // name -> {correct, wrong}
+let current = null; // current question species obj
+let imgCache = {};
+let answered = false;
+let sessionCorrect = 0, sessionTotal = 0;
+
+// Timed challenge state
+const CHALLENGE_SECONDS = 180;
+const CHALLENGE_QUESTIONS = 20;
+let challengeTimer = null;
+let challengeTimeLeft = CHALLENGE_SECONDS;
+let challengeAsked = 0;
+let challengeCorrect = 0;
+let challengeActive = false;
+
+const quizArea = document.getElementById('quizArea');
+const statsArea = document.getElementById('statsArea');
+const printArea = document.getElementById('printArea');
+
+/* ---------------- Storage helpers ---------------- */
+async function loadStats(){
+  try{
+    const res = await storageAPI.get('tree-stats');
+    statsCache = res ? JSON.parse(res.value) : {};
+  }catch(e){ statsCache = {}; }
+}
+async function saveStats(){
+  try{ await storageAPI.set('tree-stats', JSON.stringify(statsCache)); }catch(e){}
+}
+async function loadImgCache(){
+  try{
+    const res = await storageAPI.get('tree-imgcache-v2');
+    imgCache = res ? JSON.parse(res.value) : {};
+  }catch(e){ imgCache = {}; }
+}
+async function saveImgCacheEntry(name, images){
+  imgCache[name] = images;
+  try{ await storageAPI.set('tree-imgcache-v2', JSON.stringify(imgCache)); }catch(e){}
+}
+
+let dailyLog = {};      // "YYYY-MM-DD" -> {correct, total}
+let confusionLog = {};  // "correct|chosen" -> count
+
+async function loadDailyLog(){
+  try{
+    const res = await storageAPI.get('tree-daily');
+    dailyLog = res ? JSON.parse(res.value) : {};
+  }catch(e){ dailyLog = {}; }
+}
+async function saveDailyLog(){
+  try{ await storageAPI.set('tree-daily', JSON.stringify(dailyLog)); }catch(e){}
+}
+async function loadConfusionLog(){
+  try{
+    const res = await storageAPI.get('tree-confusions');
+    confusionLog = res ? JSON.parse(res.value) : {};
+  }catch(e){ confusionLog = {}; }
+}
+async function saveConfusionLog(){
+  try{ await storageAPI.set('tree-confusions', JSON.stringify(confusionLog)); }catch(e){}
+}
+
+function todayKey(){ return new Date().toISOString().slice(0,10); }
+
+function getStat(name){
+  return statsCache[name] || {correct:0, wrong:0};
+}
+
+function recordAnswer(name, isCorrect, chosenName){
+  // per-species mastery
+  const s = getStat(name);
+  if(isCorrect) s.correct++; else s.wrong++;
+  statsCache[name] = s;
+  saveStats();
+
+  // daily activity, for "percentage correct over time"
+  const day = todayKey();
+  const d = dailyLog[day] || {correct:0, total:0};
+  d.total++;
+  if(isCorrect) d.correct++;
+  dailyLog[day] = d;
+  saveDailyLog();
+
+  // specific mix-ups, so she can see exactly which species get swapped
+  if(!isCorrect && chosenName && chosenName !== name){
+    const key = `${name}|${chosenName}`;
+    confusionLog[key] = (confusionLog[key] || 0) + 1;
+    saveConfusionLog();
+  }
+}
+
+function masteryLevel(name){
+  const s = getStat(name);
+  const total = s.correct + s.wrong;
+  if(total === 0) return "new";
+  const ratio = s.correct / total;
+  if(s.wrong >= 2 && ratio < 0.5) return "weak";
+  if(ratio >= 0.8 && total >= 2) return "strong";
+  return "ok";
+}
+
+/* ---------------- Image fetching: GBIF (primary, reputable) + Wikipedia (fallback) ---------------- */
+// GBIF aggregates verified records from natural history museums, herbaria and
+// research-grade observations (GBIF.org / iNaturalist / Naturalis etc).
+// We pull several photographed occurrence records per species and show them
+// as a small gallery, each credited to its photographer/institution.
+
+function hybridVariants(name){
+  const variants = [name];
+  if(/ x /.test(name)){
+    variants.push(name.replace(/ x /,' × '));
+    variants.push(name.replace(/ x /,' '));
+  }
+  return variants;
+}
+
+async function gbifMatchTaxonKey(name){
+  for(const strict of [true, false]){
+    for(const variant of hybridVariants(name)){
+      const url = `https://api.gbif.org/v1/species/match?name=${encodeURIComponent(variant)}&kingdom=Plantae&strict=${strict}`;
+      try{
+        const r = await fetch(url);
+        if(!r.ok) continue;
+        const j = await r.json();
+        if(j.usageKey && (j.matchType !== 'NONE')) return j.usageKey;
+      }catch(e){ /* try next */ }
+    }
+  }
+  return null;
+}
+
+async function gbifOccurrenceImages(taxonKey){
+  const url = `https://api.gbif.org/v1/occurrence/search?taxonKey=${taxonKey}&mediaType=StillImage&limit=40`;
+  try{
+    const r = await fetch(url);
+    if(!r.ok) return [];
+    const j = await r.json();
+    const out = [];
+    const seen = new Set();
+    for(const rec of (j.results||[])){
+      for(const m of (rec.media||[])){
+        if(m.type !== 'StillImage' || !m.identifier) continue;
+        if(seen.has(m.identifier)) continue;
+        seen.add(m.identifier);
+        out.push({
+          url: m.identifier,
+          credit: m.creator || m.rightsHolder || rec.recordedBy || 'unbekannt',
+          license: (m.license || '').replace('http://creativecommons.org/licenses/','CC ').replace(/\/.*$/,'').toUpperCase() || '',
+          source: rec.publisher || 'GBIF.org',
+          link: `https://www.gbif.org/occurrence/${rec.key}`
+        });
+        if(out.length >= 6) return out;
+      }
+    }
+    return out;
+  }catch(e){ return []; }
+}
+
+function wikiCandidateTitles(name){
+  const list = [];
+  const underscored = name.replace(/ /g,'_');
+  list.push(underscored);
+  if(/ x /.test(name)){
+    list.push(name.replace(/ x /,' × ').replace(/ /g,'_'));
+    list.push(name.replace(/ x /,' ').replace(/ /g,'_'));
+  }
+  list.push(underscored + '_(plant)');
+  return list;
+}
+
+async function fetchWikiSummary(title, lang){
+  const url = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+  try{
+    const r = await fetch(url);
+    if(!r.ok) return null;
+    const j = await r.json();
+    if(j.thumbnail && j.thumbnail.source){
+      const img = j.originalimage ? j.originalimage.source : j.thumbnail.source;
+      return {url: img, credit: 'Wikipedia', license: '', source: `${lang}.wikipedia.org`, link: j.content_urls && j.content_urls.desktop ? j.content_urls.desktop.page : ''};
+    }
+    return null;
+  }catch(e){ return null; }
+}
+
+async function wikiOpenSearchTitle(name, lang){
+  const url = `https://${lang}.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(name)}&limit=1&namespace=0&format=json&origin=*`;
+  try{
+    const r = await fetch(url);
+    if(!r.ok) return null;
+    const j = await r.json();
+    if(j[1] && j[1][0]) return j[1][0];
+    return null;
+  }catch(e){ return null; }
+}
+
+async function wikiFallbackImages(name){
+  for(const lang of ['en','de']){
+    for(const t of wikiCandidateTitles(name)){
+      const img = await fetchWikiSummary(t, lang);
+      if(img) return [img];
+    }
+    const found = await wikiOpenSearchTitle(name, lang);
+    if(found){
+      const img = await fetchWikiSummary(found, lang);
+      if(img) return [img];
+    }
+  }
+  return [];
+}
+
+async function getImages(name){
+  if(imgCache[name]) return imgCache[name];
+  let images = [];
+  const taxonKey = await gbifMatchTaxonKey(name);
+  if(taxonKey){
+    images = await gbifOccurrenceImages(taxonKey);
+  }
+  if(images.length === 0){
+    images = await wikiFallbackImages(name);
+  }
+  if(images.length){
+    await saveImgCacheEntry(name, images);
+  }
+  return images;
+}
+
+/* ---------------- Generic photo gallery renderer ---------------- */
+// Mounts a swipeable/clickable gallery of ALL available photos for a species
+// into a given frame element. Used by the main quiz card and the compare panel.
+async function mountGallery(frameEl, name, creditEl){
+  const images = await getImages(name);
+  if(!frameEl || !frameEl.isConnected) return;
+  if(images.length === 0){
+    frameEl.innerHTML = `<div class="noimg">Kein Foto gefunden für<br><em>${name}</em></div>`;
+    if(creditEl) creditEl.textContent = '';
+    return;
+  }
+  let idx = 0;
+  const render = ()=>{
+    const img = images[idx];
+    frameEl.innerHTML = `
+      <img src="${img.url}" alt="${name}">
+      ${images.length > 1 ? `
+        <div class="gal-arrow prev">‹</div>
+        <div class="gal-arrow next">›</div>
+        <div class="gal-dots">${images.map((_,i)=>`<span class="${i===idx?'on':''}"></span>`).join('')}</div>
+      ` : ''}
+    `;
+    if(creditEl){
+      const licensePart = img.license ? ` · ${img.license}` : '';
+      const linkOpen = img.link ? `<a href="${img.link}" target="_blank" rel="noopener">${img.source}</a>` : img.source;
+      creditEl.innerHTML = `Foto ${idx+1}/${images.length} · ${img.credit}${licensePart} · via ${linkOpen}`;
+    }
+    if(images.length > 1){
+      frameEl.querySelector('.prev').onclick = (e)=>{ e.stopPropagation(); idx = (idx - 1 + images.length) % images.length; render(); };
+      frameEl.querySelector('.next').onclick = (e)=>{ e.stopPropagation(); idx = (idx + 1) % images.length; render(); };
+    }
+  };
+  render();
+}
+
+async function showComparison(correctName, wrongName){
+  const box = document.getElementById('compareBox');
+  if(!box) return;
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div class="compare-title">Verwechslungsgefahr — alle Fotos im Vergleich</div>
+    <div class="compare-imgs">
+      <div class="compare-col">
+        <div class="compare-frame" id="compWrong"><div class="loading">lädt …</div></div>
+        <div class="compare-label wrong">${wrongName}<span>deine Wahl</span></div>
+        <div class="img-credit" id="compWrongCredit"></div>
+      </div>
+      <div class="compare-col">
+        <div class="compare-frame" id="compCorrect"><div class="loading">lädt …</div></div>
+        <div class="compare-label correct">${correctName}<span>richtig</span></div>
+        <div class="img-credit" id="compCorrectCredit"></div>
+      </div>
+    </div>
+  `;
+  mountGallery(document.getElementById('compWrong'), wrongName, document.getElementById('compWrongCredit'));
+  mountGallery(document.getElementById('compCorrect'), correctName, document.getElementById('compCorrectCredit'));
+}
+
+/* ---------------- Filtering & selection ---------------- */
+function filteredPool(){
+  return SPECIES.filter(([name, cat])=>{
+    if(genusFilter !== 'all' && genusOf(name) !== genusFilter) return false;
+    if(catFilter === 'all') return true;
+    if(catFilter === 'laub' || catFilter === 'nadel') return cat === catFilter;
+    if(catFilter === 'weak') return masteryLevel(name) === 'weak' || masteryLevel(name) === 'new';
+    return true;
+  });
+}
+
+function weightedPick(pool){
+  const weights = pool.map(([name])=>{
+    const s = getStat(name);
+    const total = s.correct + s.wrong;
+    if(total === 0) return 5;
+    const ratio = s.correct/total;
+    return 1 + (1-ratio)*6;
+  });
+  const sum = weights.reduce((a,b)=>a+b,0);
+  let r = Math.random()*sum;
+  for(let i=0;i<pool.length;i++){
+    r -= weights[i];
+    if(r<=0) return pool[i];
+  }
+  return pool[pool.length-1];
+}
+
+function genusOf(name){ return name.split(' ')[0]; }
+
+function sampleDistractors(pool, correctName, correctCat, n){
+  const genus = genusOf(correctName);
+  const sameGenus = pool.filter(([name])=>name!==correctName && genusOf(name)===genus);
+  const sameCat = pool.filter(([name,cat])=>cat===correctCat && name!==correctName && genusOf(name)!==genus);
+  const rest = pool.filter(([name])=>name!==correctName && genusOf(name)!==genus);
+
+  const shuffledGenus = [...sameGenus].sort(()=>Math.random()-0.5);
+  const shuffledCat = [...sameCat].sort(()=>Math.random()-0.5);
+  const shuffledRest = [...rest].sort(()=>Math.random()-0.5);
+
+  const picked = [];
+  for(const arr of [shuffledGenus, shuffledCat, shuffledRest]){
+    for(const [name] of arr){
+      if(picked.length >= n) break;
+      picked.push(name);
+    }
+    if(picked.length >= n) break;
+  }
+  return picked.slice(0,n);
+}
+
+/* ---------------- Rendering: Multiple Choice ---------------- */
+async function newMCQuestion(){
+  answered = false;
+  const pool = filteredPool();
+  if(pool.length === 0){
+    quizArea.innerHTML = `<div class="card"><div class="card-inner"><p>Keine Bäume in dieser Auswahl. Wähle einen anderen Filter.</p></div></div>`;
+    return;
+  }
+  const [name, cat] = weightedPick(pool);
+  current = {name, cat};
+  const distractors = sampleDistractors(pool, name, cat, 3);
+  const options = [...distractors, name].sort(()=>Math.random()-0.5);
+
+  quizArea.innerHTML = `
+    <div class="card">
+      <div class="card-inner">
+        <div class="specimen-tag">
+          <span>Nr. ${SPECIES.findIndex(s=>s[0]===name)+1 } · ${cat==='laub'?'Laubgehölz':'Nadelgehölz'}</span>
+          <span class="seal">BL</span>
+        </div>
+        <div class="img-frame" id="imgFrame"><div class="loading">Bild wird geladen …</div></div>
+        <div class="img-credit" id="imgCredit"></div>
+        <div class="options" id="opts">
+          ${options.map(o=>`<button class="opt" data-name="${o}">${o}</button>`).join('')}
+        </div>
+        <div class="compare" id="compareBox" style="display:none;"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <span id="scoreLine">Session: ${sessionCorrect}/${sessionTotal}</span>
+      <button class="btn ghost" id="skipBtn">Überspringen →</button>
+    </div>
+  `;
+  document.getElementById('skipBtn').onclick = newMCQuestion;
+  document.querySelectorAll('#opts .opt').forEach(btn=>{
+    btn.onclick = () => handleMCAnswer(btn, name);
+  });
+  loadImageInto('imgFrame', name);
+}
+
+function handleMCAnswer(btn, correctName){
+  if(answered) return;
+  answered = true;
+  const chosen = btn.dataset.name;
+  const isCorrect = chosen === correctName;
+  sessionTotal++;
+  if(isCorrect) sessionCorrect++;
+  recordAnswer(correctName, isCorrect, chosen);
+  document.querySelectorAll('#opts .opt').forEach(o=>{
+    o.disabled = true;
+    if(o.dataset.name === correctName) o.classList.add('correct');
+    else if(o === btn) o.classList.add('wrong');
+  });
+  document.getElementById('scoreLine').textContent = `Session: ${sessionCorrect}/${sessionTotal}`;
+  if(!isCorrect){
+    showComparison(correctName, chosen);
+  }
+  const controls = document.querySelector('.controls');
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'btn';
+  nextBtn.textContent = 'Nächster Baum →';
+  nextBtn.onclick = newMCQuestion;
+  controls.appendChild(nextBtn);
+}
+
+/* ---------------- Rendering: Picture Mode (name -> choose photo) ---------------- */
+async function newPicQuestion(){
+  answered = false;
+  const pool = filteredPool();
+  if(pool.length === 0){
+    quizArea.innerHTML = `<div class="card"><div class="card-inner"><p>Keine Bäume in dieser Auswahl. Wähle einen anderen Filter.</p></div></div>`;
+    return;
+  }
+  const [name, cat] = weightedPick(pool);
+  current = {name, cat};
+  const distractors = sampleDistractors(pool, name, cat, 3);
+  const options = [...distractors, name].sort(()=>Math.random()-0.5);
+
+  quizArea.innerHTML = `
+    <div class="card">
+      <div class="card-inner">
+        <div class="specimen-tag">
+          <span>Nr. ${SPECIES.findIndex(s=>s[0]===name)+1} · ${cat==='laub'?'Laubgehölz':'Nadelgehölz'}</span>
+          <span class="seal">BL</span>
+        </div>
+        <div class="pic-prompt">${name}</div>
+        <div class="pic-grid" id="picOpts">
+          ${options.map(o=>`<button class="pic-opt" data-name="${o}"><div class="loading">lädt …</div></button>`).join('')}
+        </div>
+        <div class="compare" id="compareBox" style="display:none;"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <span id="scoreLine">Session: ${sessionCorrect}/${sessionTotal}</span>
+      <button class="btn ghost" id="skipBtn">Überspringen →</button>
+    </div>
+  `;
+  document.getElementById('skipBtn').onclick = newPicQuestion;
+  document.querySelectorAll('#picOpts .pic-opt').forEach(btn=>{
+    btn.onclick = () => handlePicAnswer(btn, name);
+    loadPicOption(btn, btn.dataset.name);
+  });
+}
+
+async function loadPicOption(btn, name){
+  const images = await getImages(name);
+  if(!btn.isConnected) return;
+  if(images.length === 0){
+    btn.innerHTML = `<div class="noimg">kein Foto</div>`;
+    return;
+  }
+  btn.innerHTML = `<img src="${images[0].url}" alt="">`;
+}
+
+function handlePicAnswer(btn, correctName){
+  if(answered) return;
+  answered = true;
+  const chosen = btn.dataset.name;
+  const isCorrect = chosen === correctName;
+  sessionTotal++;
+  if(isCorrect) sessionCorrect++;
+  recordAnswer(correctName, isCorrect, chosen);
+  document.querySelectorAll('#picOpts .pic-opt').forEach(o=>{
+    o.disabled = true;
+    if(o.dataset.name === correctName) o.classList.add('correct');
+    else if(o === btn) o.classList.add('wrong');
+  });
+  document.getElementById('scoreLine').textContent = `Session: ${sessionCorrect}/${sessionTotal}`;
+  if(!isCorrect){
+    showComparison(correctName, chosen);
+  }
+  const controls = document.querySelector('.controls');
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'btn';
+  nextBtn.textContent = 'Nächster Baum →';
+  nextBtn.onclick = newPicQuestion;
+  controls.appendChild(nextBtn);
+}
+
+/* ---------------- Rendering: Flashcards ---------------- */
+async function newFlashcard(){
+  const pool = filteredPool();
+  if(pool.length === 0){
+    quizArea.innerHTML = `<div class="card"><div class="card-inner"><p>Keine Bäume in dieser Auswahl.</p></div></div>`;
+    return;
+  }
+  const [name, cat] = weightedPick(pool);
+  current = {name, cat};
+  quizArea.innerHTML = `
+    <div class="card">
+      <div class="card-inner">
+        <div class="specimen-tag">
+          <span>Nr. ${SPECIES.findIndex(s=>s[0]===name)+1} · ${cat==='laub'?'Laubgehölz':'Nadelgehölz'}</span>
+          <span class="seal">BL</span>
+        </div>
+        <div class="img-frame" id="imgFrame"><div class="loading">Bild wird geladen …</div></div>
+        <div class="img-credit" id="imgCredit"></div>
+        <div class="flash-name" id="flashName">Wie heißt dieser Baum? (Antippen zum Aufdecken)</div>
+        <div style="text-align:center;margin-top:16px;">
+          <button class="btn ghost" id="hardBtn">Schwer 🍂</button>
+          <button class="btn" id="easyBtn" style="margin-left:8px;">Kannte ich 🌿</button>
+        </div>
+      </div>
+    </div>
+    <div class="controls">
+      <span>${sessionTotal} Karten diese Sitzung</span>
+      <button class="btn ghost" id="nextFlash">Nächste →</button>
+    </div>
+  `;
+  const flashName = document.getElementById('flashName');
+  let revealed = false;
+  flashName.onclick = ()=>{
+    if(revealed) return;
+    revealed = true;
+    flashName.textContent = name;
+    flashName.classList.add('shown');
+  };
+  document.getElementById('nextFlash').onclick = newFlashcard;
+  document.getElementById('easyBtn').onclick = ()=>{
+    sessionTotal++; recordAnswer(name, true); newFlashcard();
+  };
+  document.getElementById('hardBtn').onclick = ()=>{
+    sessionTotal++; recordAnswer(name, false); newFlashcard();
+  };
+  loadImageInto('imgFrame', name);
+}
+
+/* ---------------- Image loading into a frame (multi-photo gallery) ---------------- */
+async function loadImageInto(frameId, name){
+  const frame = document.getElementById(frameId);
+  const creditEl = document.getElementById(frameId === 'imgFrame' ? 'imgCredit' : '');
+  if(!frame) return; // user navigated away (question already advanced)
+  mountGallery(frame, name, creditEl);
+}
+
+/* ---------------- Timed Challenge ---------------- */
+function formatTime(s){
+  const m = Math.floor(s/60);
+  const sec = s%60;
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+
+function showChallengeIntro(){
+  stopChallenge();
+  quizArea.innerHTML = `
+    <div class="card"><div class="card-inner">
+      <div class="challenge-intro">
+        <p>${CHALLENGE_QUESTIONS} Bäume in ${Math.round(CHALLENGE_SECONDS/60)} Minuten, Multiple Choice, gegen die Uhr — wie im Ernstfall auf dem Lehrpfad. Aktuelle Filter/Gattungsauswahl gelten auch hier.</p>
+        <button class="btn" id="startChallengeBtn">Start</button>
+      </div>
+    </div></div>
+  `;
+  const startBtn = document.getElementById('startChallengeBtn');
+  if(startBtn) startBtn.onclick = startChallenge;
+}
+
+function startChallenge(){
+  const pool = filteredPool();
+  if(pool.length < 4){
+    quizArea.innerHTML = `<div class="card"><div class="card-inner"><p>Zu wenige Bäume in dieser Auswahl für die Challenge — wähle einen breiteren Filter.</p></div></div>`;
+    return;
+  }
+  challengeActive = true;
+  challengeAsked = 0;
+  challengeCorrect = 0;
+  challengeTimeLeft = CHALLENGE_SECONDS;
+  clearInterval(challengeTimer);
+  challengeTimer = setInterval(tickChallenge, 1000);
+  newChallengeQuestion();
+}
+
+function stopChallenge(){
+  challengeActive = false;
+  clearInterval(challengeTimer);
+  challengeTimer = null;
+}
+
+function tickChallenge(){
+  challengeTimeLeft--;
+  const clockEl = document.getElementById('challengeClock');
+  if(clockEl){
+    clockEl.textContent = formatTime(challengeTimeLeft);
+    clockEl.classList.toggle('low', challengeTimeLeft <= 20);
+  }
+  if(challengeTimeLeft <= 0) endChallenge('time');
+}
+
+function newChallengeQuestion(){
+  if(!challengeActive) return;
+  answered = false;
+  const pool = filteredPool();
+  const [name, cat] = weightedPick(pool);
+  current = {name, cat};
+  const distractors = sampleDistractors(pool, name, cat, 3);
+  const options = [...distractors, name].sort(()=>Math.random()-0.5);
+
+  quizArea.innerHTML = `
+    <div class="timer-bar">
+      <span>Baum ${challengeAsked+1}/${CHALLENGE_QUESTIONS}</span>
+      <span class="clock" id="challengeClock">${formatTime(challengeTimeLeft)}</span>
+      <span>Richtig: ${challengeCorrect}</span>
+    </div>
+    <div class="card">
+      <div class="card-inner">
+        <div class="img-frame" id="imgFrame"><div class="loading">Bild wird geladen …</div></div>
+        <div class="img-credit" id="imgCredit"></div>
+        <div class="options" id="opts">
+          ${options.map(o=>`<button class="opt" data-name="${o}">${o}</button>`).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+  document.querySelectorAll('#opts .opt').forEach(btn=>{
+    btn.onclick = () => handleChallengeAnswer(btn, name);
+  });
+  loadImageInto('imgFrame', name);
+}
+
+function handleChallengeAnswer(btn, correctName){
+  if(answered || !challengeActive) return;
+  answered = true;
+  const chosen = btn.dataset.name;
+  const isCorrect = chosen === correctName;
+  if(isCorrect) challengeCorrect++;
+  recordAnswer(correctName, isCorrect, chosen);
+  document.querySelectorAll('#opts .opt').forEach(o=>{
+    o.disabled = true;
+    if(o.dataset.name === correctName) o.classList.add('correct');
+    else if(o === btn) o.classList.add('wrong');
+  });
+  challengeAsked++;
+  setTimeout(()=>{
+    if(!challengeActive) return;
+    if(challengeAsked >= CHALLENGE_QUESTIONS) endChallenge('done');
+    else newChallengeQuestion();
+  }, 800);
+}
+
+function endChallenge(reason){
+  challengeActive = false;
+  clearInterval(challengeTimer);
+  const pct = challengeAsked > 0 ? Math.round((challengeCorrect/challengeAsked)*100) : 0;
+  quizArea.innerHTML = `
+    <div class="card"><div class="card-inner">
+      <div class="challenge-result">
+        <div class="big">${challengeCorrect}/${challengeAsked}</div>
+        <p>${pct}% richtig ${reason==='time' ? '· Zeit abgelaufen' : '· geschafft!'}</p>
+        <button class="btn" id="retryChallengeBtn" style="margin-top:14px;">Nochmal</button>
+      </div>
+    </div></div>
+  `;
+  const retryBtn = document.getElementById('retryChallengeBtn');
+  if(retryBtn) retryBtn.onclick = showChallengeIntro;
+}
+
+/* ---------------- Printable cheat sheet (Spickzettel) ---------------- */
+async function renderPrintSheet(){
+  const pool = filteredPool();
+  printArea.innerHTML = `
+    <div class="print-toolbar">
+      <button class="btn" id="printBtn">Drucken / als PDF speichern</button>
+      <span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--bark);align-self:center;">${pool.length} Bäume in aktueller Auswahl</span>
+    </div>
+    <div class="print-grid" id="printGrid">
+      ${pool.map(([name])=>`
+        <div class="print-card" data-name="${name}">
+          <div class="print-img"><div class="loading">lädt …</div></div>
+          <div class="print-name">${name}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  const printBtn = document.getElementById('printBtn');
+  if(printBtn) printBtn.onclick = ()=>window.print();
+
+  // Load photos with limited concurrency so we don't hammer the APIs at once.
+  const cards = Array.from(document.querySelectorAll('#printGrid .print-card'));
+  let i = 0;
+  async function worker(){
+    while(i < cards.length){
+      const card = cards[i++];
+      const name = card.dataset.name;
+      const images = await getImages(name);
+      if(!card.isConnected) continue;
+      const imgWrap = card.querySelector('.print-img');
+      if(images.length){
+        imgWrap.innerHTML = `<img src="${images[0].url}" alt="${name}">`;
+      } else {
+        imgWrap.innerHTML = `<div class="noimg">kein Foto</div>`;
+      }
+    }
+  }
+  await Promise.all(Array.from({length:5}, worker));
+}
+
+/* ---------------- Stats view ---------------- */
+function renderStats(){
+  const totalSeen = SPECIES.filter(([n])=> (statsCache[n]||{}).correct + (statsCache[n]||{}).wrong > 0).length;
+  const weakList = SPECIES.filter(([n])=>masteryLevel(n)==='weak');
+  const strongList = SPECIES.filter(([n])=>masteryLevel(n)==='strong');
+
+  let overallCorrect = 0, overallTotal = 0;
+  Object.values(statsCache).forEach(s=>{ overallCorrect += s.correct||0; overallTotal += (s.correct||0)+(s.wrong||0); });
+  const overallPct = overallTotal ? Math.round((overallCorrect/overallTotal)*100) : null;
+
+  let html = `
+    <div class="summary-bar">
+      <span>${totalSeen}/${SPECIES.length} geübt</span>
+      <span>·</span>
+      <span>${strongList.length} sicher</span>
+      <span>·</span>
+      <span>${weakList.length} schwach</span>
+      ${overallPct !== null ? `<span>·</span><span>${overallPct}% insgesamt richtig (${overallCorrect}/${overallTotal})</span>` : ''}
+    </div>
+  `;
+
+  // ---- Recent activity (last 14 days), for "percentage correct per session/day" ----
+  html += `<div class="section-title">Aktivität — letzte 14 Tage</div>`;
+  const days = [];
+  for(let i=13;i>=0;i--){
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    days.push(d.toISOString().slice(0,10));
+  }
+  const activeDays = days.filter(d => dailyLog[d] && dailyLog[d].total > 0);
+  if(activeDays.length === 0){
+    html += `<div class="empty-note">Noch keine Übungsaktivität erfasst. Sobald sie eine Runde spielt, erscheint hier der Tagesverlauf.</div>`;
+  } else {
+    activeDays.forEach(d=>{
+      const rec = dailyLog[d];
+      const pct = Math.round((rec.correct/rec.total)*100);
+      const dLabel = new Date(d+'T00:00:00').toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'});
+      html += `
+        <div class="history-row">
+          <span class="hdate">${dLabel}</span>
+          <span class="history-bar-track"><span class="history-bar-fill" style="width:${pct}%;"></span></span>
+          <span class="hpct">${pct}% (${rec.correct}/${rec.total})</span>
+        </div>
+      `;
+    });
+  }
+
+  // ---- Top confusions, i.e. which species get swapped with which ----
+  html += `<div class="section-title">Häufigste Verwechslungen</div>`;
+  const confusionEntries = Object.entries(confusionLog).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  if(confusionEntries.length === 0){
+    html += `<div class="empty-note">Noch keine Verwechslungen erfasst.</div>`;
+  } else {
+    confusionEntries.forEach(([key, count])=>{
+      const [correctName, chosenName] = key.split('|');
+      html += `
+        <div class="confusion-row">
+          <span class="pair">${chosenName}<span class="arrow">statt</span>${correctName}</span>
+          <span class="count">${count}×</span>
+        </div>
+      `;
+    });
+  }
+
+  // ---- Per-species mastery, with ratio ----
+  if(weakList.length){
+    html += `<div class="section-title">Zum Wiederholen</div>`;
+    weakList.forEach(([n])=>{
+      const s = getStat(n);
+      const total = s.correct + s.wrong;
+      const pct = total ? Math.round((s.correct/total)*100) : 0;
+      html += `<div class="stat-row"><span class="lat">${n}<span class="ratio">${pct}% richtig · ${s.wrong}× falsch</span></span><span class="dot weak"></span></div>`;
+    });
+  }
+
+  html += `<div class="section-title">Alle Arten</div>`;
+  SPECIES.forEach(([n,c])=>{
+    const lvl = masteryLevel(n);
+    const s = getStat(n);
+    const total = s.correct + s.wrong;
+    const ratioText = total ? `${Math.round((s.correct/total)*100)}% (${s.correct}/${total})` : 'noch nicht geübt';
+    html += `<div class="stat-row"><span class="lat">${n} <span style="font-family:'Space Mono',monospace;font-size:10px;opacity:0.6;">${c==='laub'?'L':'N'}</span><span class="ratio">${ratioText}</span></span><span class="dot ${lvl}"></span></div>`;
+  });
+
+  html += `<div class="reset-link" id="resetLink">Fortschritt zurücksetzen</div>`;
+  statsArea.innerHTML = html;
+  const resetLink = document.getElementById('resetLink');
+  if(resetLink){
+    resetLink.onclick = async ()=>{
+      if(confirm('Gesamten Lernfortschritt (Statistiken, Verlauf, Verwechslungen) wirklich löschen?')){
+        statsCache = {};
+        dailyLog = {};
+        confusionLog = {};
+        await saveStats();
+        await saveDailyLog();
+        await saveConfusionLog();
+        renderStats();
+      }
+    };
+  }
+}
+
+/* ---------------- Mode / filter switching ---------------- */
+function setMode(m){
+  if(challengeActive && m !== 'challenge') stopChallenge();
+  mode = m;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.mode===m));
+  const showFilters = (m !== 'stats');
+  document.getElementById('filterRow').style.display = showFilters ? 'flex' : 'none';
+  document.getElementById('genusRow').style.display = showFilters ? 'flex' : 'none';
+  quizArea.style.display = (m==='stats' || m==='print') ? 'none' : 'block';
+  statsArea.style.display = m==='stats' ? 'block' : 'none';
+  printArea.style.display = m==='print' ? 'block' : 'none';
+  sessionCorrect = 0; sessionTotal = 0;
+  if(m==='mc') newMCQuestion();
+  else if(m==='pic') newPicQuestion();
+  else if(m==='flash') newFlashcard();
+  else if(m==='challenge') showChallengeIntro();
+  else if(m==='print') renderPrintSheet();
+  else renderStats();
+}
+
+function refreshCurrentMode(){
+  if(mode==='mc') newMCQuestion();
+  else if(mode==='pic') newPicQuestion();
+  else if(mode==='flash') newFlashcard();
+  else if(mode==='challenge') showChallengeIntro();
+  else if(mode==='print') renderPrintSheet();
+}
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick = ()=> setMode(t.dataset.mode);
+});
+document.querySelectorAll('.chip').forEach(c=>{
+  c.onclick = ()=>{
+    document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on');
+    catFilter = c.dataset.cat;
+    refreshCurrentMode();
+  };
+});
+
+function populateGenusSelect(){
+  const counts = {};
+  SPECIES.forEach(([name])=>{
+    const g = genusOf(name);
+    counts[g] = (counts[g]||0)+1;
+  });
+  const genera = Object.keys(counts).sort();
+  const sel = document.getElementById('genusSelect');
+  genera.forEach(g=>{
+    const opt = document.createElement('option');
+    opt.value = g;
+    opt.textContent = `${g} (${counts[g]})`;
+    sel.appendChild(opt);
+  });
+  sel.onchange = ()=>{
+    genusFilter = sel.value;
+    refreshCurrentMode();
+  };
+}
+
+/* ---------------- Init ---------------- */
+(async function init(){
+  await loadStats();
+  await loadImgCache();
+  await loadDailyLog();
+  await loadConfusionLog();
+  populateGenusSelect();
+  setMode('mc');
+})();
+</script>
+</body>
+</html>
